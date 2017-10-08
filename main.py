@@ -7,18 +7,54 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://build-a-blog:buildablog
 app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
 
-#stopping point; added all the proper info in database connection string above
+class Blog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    blog_title = db.Column(db.String(200))
+    blog_body = db.Column(db.Text)
+    
+    def __init__(self, blog_title, blog_body):
+        self.blog_title = blog_title
+        self.blog_body = blog_body
 
-tasks = []
-
-@app.route('/', methods=['POST', 'GET'])
-def index():
+@app.route('/newpost', methods=['POST', 'GET'])
+def newpost():
 
     if request.method == 'POST':
-        task = request.form['task']
-        tasks.append(task)
+        blog_title = request.form['blog_title']
+        blog_body = request.form['blog_body']
 
-    return render_template('todos.html',title="Get It Done!", tasks=tasks)
+        title_error = ""
+        body_error = ""
 
+        if blog_title == "":
+            title_error = "Please fill in the title"
+        
+        if blog_body == "":
+            body_error = "Please fill in the body"
 
-app.run()
+        if title_error == "" and body_error == "":
+            new_blog_entry = Blog(blog_title, blog_body)
+            db.session.add(new_blog_entry)
+            db.session.commit()
+            
+            blogs = Blog.query.all()
+            return render_template('blog.html', title="Blog Posts", blog_title=blog_title, blog_body=blog_body)
+
+        else:
+            return render_template('newpost.html', title='New Post Error', blog_title=blog_title, blog_body=blog_body, title_error=title_error, body_error=body_error) 
+
+@app.route("/blog", methods = ['GET'])
+def blog():
+    blog_title = request.form['blog_title']
+    blog_body = request.form['blog_body']
+
+    #Do I need to use the blog.query.all in this section?
+    blogs = Blog.query.all()
+    return render_template('blog.html', blog_title=blog_title, blog_body=blog_body)
+
+@app.route("/")
+def index():
+    return "<h1>Go to the proper route above</h1>"
+
+if __name__ == '__main__':
+    app.run()
