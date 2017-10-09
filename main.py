@@ -19,6 +19,9 @@ class Blog(db.Model):
 @app.route('/newpost', methods=['POST', 'GET'])
 def newpost():
 
+    if request.method == 'GET':
+        return render_template('newpost.html', title="Add Blog Entry")
+
     if request.method == 'POST':
         blog_title = request.form['blog_title']
         blog_body = request.form['blog_body']
@@ -36,21 +39,34 @@ def newpost():
             new_blog_entry = Blog(blog_title, blog_body)
             db.session.add(new_blog_entry)
             db.session.commit()
+            query_param = '/blog?id=' + str(new_blog_entry.id)
+            return redirect(query_param)
             
+        else:    
             blogs = Blog.query.all()
-            return render_template('blog.html', title="Blog Posts", blog_title=blog_title, blog_body=blog_body)
+            return render_template('blog.html', title="Blog Posts", blogs=blogs)
 
-        else:
-            return render_template('newpost.html', title='New Post Error', blog_title=blog_title, blog_body=blog_body, title_error=title_error, body_error=body_error) 
+        # else:
+        #     return render_template('newpost.html', title='New Post Error', blog_title=blog_title, blog_body=blog_body, title_error=title_error, body_error=body_error) 
 
-@app.route("/blog", methods = ['GET'])
+@app.route("/blog", methods = ['POST', 'GET'])
 def blog():
-    blog_title = request.form['blog_title']
-    blog_body = request.form['blog_body']
+    if request.args:
+        blog_id = request.args.get('id')
+        blog = Blog.query.get(blog_id)
 
-    #Do I need to use the blog.query.all in this section?
-    blogs = Blog.query.all()
-    return render_template('blog.html', blog_title=blog_title, blog_body=blog_body)
+        return render_template('blog.html', blog=blog)
+
+    else:
+        blogs = Blog.query.all()
+        return render_template('blog.html', title="Build a Blog", blogs=blogs)    
+    
+    # blog_title = request.form['blog_title']
+    # blog_body = request.form['blog_body']
+
+    # #Do I need to use the blog.query.all in this section?
+    # blogs = Blog.query.all()
+    # return render_template('blog.html', blog_title=blog_title, blog_body=blog_body)
 
 @app.route("/")
 def index():
